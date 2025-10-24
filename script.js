@@ -66,6 +66,9 @@ async function initMapWithData() {
   const statusData = await fetchStatus(CONFIG.statusEndpoint);
   applyStatusColors(map, statusData);
   
+  // ポリゴンに数字ラベルを表示
+  addPolygonLabels(map);
+  
   // ポリゴンクリックイベントを追加
   addPolygonClickEvents(map, infoWindow);
 
@@ -123,6 +126,67 @@ function statusColor(status) {
     case "campaign": return "#2ecc71";   // 緑
     default: return "#95a5a6";           // グレー
   }
+}
+
+// ポリゴンに数字ラベルを追加する関数
+function addPolygonLabels(map) {
+  console.log("Starting addPolygonLabels");
+  let polygonCount = 0;
+  
+  map.data.forEach((feature) => {
+    const geometryType = feature.getGeometry().getType();
+    console.log(`Feature found: type=${geometryType}, name=${feature.getProperty("name")}`);
+    
+    if (geometryType === 'Polygon') {
+      polygonCount++;
+      const name = feature.getProperty("name");
+      
+      // nameの値をそのまま表示（数字のみ抽出せず、nameの値全体を使用）
+      const labelText = name || "?";
+      
+      console.log(`Processing polygon: ${name} -> label: ${labelText}`);
+      
+      // ポリゴンの中心座標を計算
+      const bounds = new google.maps.LatLngBounds();
+      const geometry = feature.getGeometry();
+      
+      // ポリゴンの頂点を取得してboundsに追加
+      geometry.getArray().forEach((path) => {
+        path.getArray().forEach((latLng) => {
+          bounds.extend(latLng);
+        });
+      });
+      
+      const center = bounds.getCenter();
+      console.log(`Polygon center: lat=${center.lat()}, lng=${center.lng()}`);
+      
+      // ポリゴンの中央にラベルマーカーを配置
+      const label = new google.maps.Marker({
+        position: center,
+        map: map,
+        label: {
+          text: labelText,
+          color: '#FFFFFF',
+          fontWeight: 'bold',
+          fontSize: '18px'
+        },
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 20,
+          fillColor: '#2c3e50',
+          fillOpacity: 0.9,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 3
+        },
+        title: `エリア ${name}`, // ホバー時に表示
+        zIndex: 1000 // ポリゴンより上に表示
+      });
+      
+      console.log(`Created marker for ${name}`);
+    }
+  });
+  
+  console.log(`Total polygons processed: ${polygonCount}`);
 }
 
 // ポリゴンクリックイベントを追加する関数
