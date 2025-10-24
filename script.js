@@ -7,7 +7,7 @@ const CONFIG = {
   // GeoJSONファイルのパス（GitHub Pagesに配置）
   geojsonUrl: "https://tkalimpong.github.io/kpg-map/map.geojson",
   // 初期中心・ズーム
-  center: { lat: 35.68, lng: 139.76 },
+  center: { lat: 27.059542543488494, lng: 88.46901912492227 },
   zoom: 10,
 };
 
@@ -93,7 +93,7 @@ async function fetchStatus(url) {
 
 function applyStatusColors(map, statusMap) {
   map.data.setStyle((feature) => {
-    const id = String(feature.getProperty("id") ?? "");
+    const id = String(feature.getProperty("name") ?? "");
     const row = statusMap.get(id);
     const status = row?.status ?? "unknown";
 
