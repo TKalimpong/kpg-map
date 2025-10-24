@@ -23,6 +23,7 @@ const CONFIG = {
 let polygonLabels = new Map(); // name -> marker のマッピング
 let polygonFeatures = [];      // すべてのポリゴンフィーチャー
 let lastUpdateTime = 0;        // 最後の更新時刻
+let statusDataMap = new Map(); // ステータスデータの保存
 
 // ページ読み込み時に開始
 window.addEventListener("DOMContentLoaded", bootstrap);
@@ -77,6 +78,7 @@ async function initMapWithData() {
 
   // ステータス取得 → 色適用
   const statusData = await fetchStatus(CONFIG.statusEndpoint);
+  statusDataMap = statusData; // グローバルに保存
   applyStatusColors(map, statusData);
   
   // ポリゴンデータを収集
@@ -167,12 +169,17 @@ function collectPolygonFeatures(map) {
       });
       
       const center = bounds.getCenter();
+            
+      // ステータス情報を取得
+      const statusRow = statusDataMap.get(name);
+      const status = statusRow?.status ?? "unknown";
       
       polygonFeatures.push({
         feature: feature,
         name: name,
         center: center,
-        bounds: bounds
+        bounds: bounds,
+        status: status
       });
     }
   });
