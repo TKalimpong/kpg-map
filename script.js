@@ -55,6 +55,7 @@ function loadGoogleMaps(apiKey) {
     const script = document.createElement("script");
     script.dataset.gmaps = "1";
     script.async = true;
+    script.defer = true; // async defer を両方指定
     script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=geometry&callback=__initMap`;
     window.__initMap = () => resolve();
     script.onerror = reject;
