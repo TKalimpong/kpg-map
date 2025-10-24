@@ -112,10 +112,10 @@ function applyStatusColors(map, statusMap) {
 
 function statusColor(status) {
   switch (String(status).toLowerCase()) {
-    case "active": return "#2ecc71";     // 緑
-    case "inactive": return "#e74c3c";   // 赤
-    case "pending": return "#f39c12";    // オレンジ
-    case "complete": return "#3498db";   // 青
+    case "4to24months": return "#2ecc71";     // 緑
+    case "RecentlyDone": return "#e74c3c";   // 赤
+    case "Doing": return "#f39c12";    // オレンジ
+    case "Neglected": return "#3498db";   // 青
     default: return "#95a5a6";           // グレー
   }
 }
