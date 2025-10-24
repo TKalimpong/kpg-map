@@ -55,9 +55,9 @@ async function initMapWithData() {
     zoom: CONFIG.zoom,
     mapId: undefined, // 必要ならスタイル用のMapID
     // 初期描画を軽くするため、重いUIはオフ（必要に応じて戻せます）
-    fullscreenControl: false,
+    fullscreenControl: true,
     streetViewControl: false,
-    mapTypeControl: false,
+    mapTypeControl: true,
   });
 
   // InfoWindowを作成（クリック時に使用）
@@ -190,7 +190,7 @@ function updatePointLabels(map) {
   const zoom = map.getZoom() || 0;
 
   // ズームが低いときは全ラベルを撤去（負荷軽減）
-  if (zoom < 16) {
+  if (zoom < 20) {
     clearAllPointLabels();
     return;
   }
@@ -260,7 +260,7 @@ function addPolygonClickEvents(map, infoWindow) {
     
     if (geometryType === 'Polygon') {
       const name = feature.getProperty("name");
-      const content = `<div style="font-weight: bold; font-size: 14px;">エリア ${name}</div>`;
+      const content = `<div style="font-weight: bold; font-size: 16px;">エリア ${name}</div>`;
       
       infoWindow.setContent(content);
       infoWindow.setPosition(event.latLng);
