@@ -101,11 +101,11 @@ function applyStatusColors(map, statusMap) {
     const color = statusColor(status);
 
     return {
-      fillColor: color,
-      fillOpacity: 0.6,
-      strokeColor: "#616060ff",
-      strokeOpacity: 0.9,
-      strokeWeight: 1,
+      fillColor: color, // 塗りつぶしの色
+      fillOpacity: 0.6, // 塗りつぶしの透明度
+      strokeColor: "#444444ff",
+      strokeOpacity: 0.7, // 線の透明度
+      strokeWeight: 1, // 線の太さ
     };
   });
 }
