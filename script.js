@@ -56,12 +56,21 @@ async function initMapWithData() {
     mapId: undefined, // 必要ならスタイル用のMapID
   });
 
+  // InfoWindowを作成（クリック時に使用）
+  const infoWindow = new google.maps.InfoWindow();
+
   // GeoJSON読み込み
   await loadGeoJson(map, CONFIG.geojsonUrl);
 
   // ステータス取得 → 色適用
   const statusData = await fetchStatus(CONFIG.statusEndpoint);
   applyStatusColors(map, statusData);
+  
+  // ポイントに数字ラベルを表示
+  addPointLabels(map);
+  
+  // ポリゴンクリックイベントを追加
+  addPolygonClickEvents(map, infoWindow);
 
   // 定期更新（1日ごと）しかしリロードのたびに更新されるため不要かも
 //   setInterval(async () => {
@@ -93,6 +102,7 @@ async function fetchStatus(url) {
 
 function applyStatusColors(map, statusMap) {
   map.data.setStyle((feature) => {
+    const geometryType = feature.getGeometry().getType();
     const id = String(feature.getProperty("name") ?? "");
     const row = statusMap.get(id);
     const status = row?.status ?? "unknown";
@@ -100,13 +110,29 @@ function applyStatusColors(map, statusMap) {
     // ステータス→色ルール
     const color = statusColor(status);
 
-    return {
-      fillColor: color, // 塗りつぶしの色
-      fillOpacity: 0.6, // 塗りつぶしの透明度
-      strokeColor: "#444444ff",
-      strokeOpacity: 0.7, // 線の透明度
-      strokeWeight: 1, // 線の太さ
-    };
+    // ポイントとポリゴンで異なるスタイルを適用
+    if (geometryType === 'Point') {
+      // ポイントは小さくして数字ラベルを目立たせる
+      return {
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 4,
+          fillColor: color,
+          fillOpacity: 0.8,
+          strokeColor: '#333',
+          strokeWeight: 1
+        }
+      };
+    } else {
+      // ポリゴンのスタイル
+      return {
+        fillColor: color, // 塗りつぶしの色
+        fillOpacity: 0.6, // 塗りつぶしの透明度
+        strokeColor: "#444444",
+        strokeOpacity: 0.7, // 線の透明度
+        strokeWeight: 1, // 線の太さ
+      };
+    }
   });
 }
 
@@ -118,4 +144,57 @@ function statusColor(status) {
     case "campaign": return "#2ecc71";   // 緑
     default: return "#95a5a6";           // グレー
   }
+}
+
+// ポイントに数字ラベルを追加する関数
+function addPointLabels(map) {
+  map.data.forEach((feature) => {
+    const geometryType = feature.getGeometry().getType();
+    if (geometryType === 'Point') {
+      const name = feature.getProperty("name");
+      const position = feature.getGeometry().get();
+      
+      // 数字を抽出（例: "Point 1" → "1", "ポイント 77" → "77"）
+      const numberMatch = name.match(/(\d+)/);
+      const labelText = numberMatch ? numberMatch[1] : name;
+      
+      // マーカーラベルを作成
+      const label = new google.maps.Marker({
+        position: {lat: position.lat(), lng: position.lng()},
+        map: map,
+        label: {
+          text: labelText,
+          color: '#FFFFFF',
+          fontWeight: 'bold',
+          fontSize: '12px'
+        },
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 12,
+          fillColor: '#9c27b0',
+          fillOpacity: 0.8,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 2
+        },
+        title: name // ホバー時に表示
+      });
+    }
+  });
+}
+
+// ポリゴンクリックイベントを追加する関数
+function addPolygonClickEvents(map, infoWindow) {
+  map.data.addListener('click', (event) => {
+    const feature = event.feature;
+    const geometryType = feature.getGeometry().getType();
+    
+    if (geometryType === 'Polygon') {
+      const name = feature.getProperty("name");
+      const content = `<div style="font-weight: bold; font-size: 14px;">エリア ${name}</div>`;
+      
+      infoWindow.setContent(content);
+      infoWindow.setPosition(event.latLng);
+      infoWindow.open(map);
+    }
+  });
 }
