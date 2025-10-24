@@ -5,7 +5,7 @@ const CONFIG = {
   // doGet() が返すステータスAPI（JSON配列: [{id, status, ...}]）
   statusEndpoint: "https://script.google.com/macros/s/AKfycbwCgVpr2kFplLSTBVh8S00msAlg3X6E0AoZX4TRHpJTvFK2-QosLWh2UkaTks5k8IXWWg/exec?type=status",
   // GeoJSONファイルのパス（GitHub Pagesに配置）
-  geojsonUrl: "https://raw.githubusercontent.com/TKalimpong/kpg-map/refs/heads/main/map.geojson",
+  geojsonUrl: "https://tkalimpong.github.io/kpg-map/map.geojson",
   // 初期中心・ズーム
   center: { lat: 35.68, lng: 139.76 },
   zoom: 10,
