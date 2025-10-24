@@ -66,9 +66,6 @@ async function initMapWithData() {
   const statusData = await fetchStatus(CONFIG.statusEndpoint);
   applyStatusColors(map, statusData);
   
-  // ポイントに数字ラベルを表示
-  addPointLabels(map);
-  
   // ポリゴンクリックイベントを追加
   addPolygonClickEvents(map, infoWindow);
 
@@ -110,18 +107,11 @@ function applyStatusColors(map, statusMap) {
     // ステータス→色ルール
     const color = statusColor(status);
 
-    // ポイントとポリゴンで異なるスタイルを適用
+    // ポリゴンのみ表示（ポイントは非表示）
     if (geometryType === 'Point') {
-      // ポイントは小さくして数字ラベルを目立たせる
+      // ポイントを非表示にする
       return {
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 4,
-          fillColor: color,
-          fillOpacity: 0.8,
-          strokeColor: '#333',
-          strokeWeight: 1
-        }
+        visible: false
       };
     } else {
       // ポリゴンのスタイル
@@ -147,41 +137,6 @@ function statusColor(status) {
 }
 
 // ポイントに数字ラベルを追加する関数
-function addPointLabels(map) {
-  map.data.forEach((feature) => {
-    const geometryType = feature.getGeometry().getType();
-    if (geometryType === 'Point') {
-      const name = feature.getProperty("name");
-      const position = feature.getGeometry().get();
-      
-      // 数字を抽出（例: "Point 1" → "1", "ポイント 77" → "77"）
-      const numberMatch = name.match(/(\d+)/);
-      const labelText = numberMatch ? numberMatch[1] : name;
-      
-      // マーカーラベルを作成
-      const label = new google.maps.Marker({
-        position: {lat: position.lat(), lng: position.lng()},
-        map: map,
-        label: {
-          text: labelText,
-          color: '#FFFFFF',
-          fontWeight: 'bold',
-          fontSize: '12px'
-        },
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 12,
-          fillColor: '#9c27b0',
-          fillOpacity: 0.8,
-          strokeColor: '#FFFFFF',
-          strokeWeight: 2
-        },
-        title: name // ホバー時に表示
-      });
-    }
-  });
-}
-
 // ポリゴンクリックイベントを追加する関数
 function addPolygonClickEvents(map, infoWindow) {
   map.data.addListener('click', (event) => {
