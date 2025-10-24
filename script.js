@@ -9,7 +9,20 @@ const CONFIG = {
   // 初期中心・ズーム
   center: { lat: 27.059542543488494, lng: 88.46901912492227 },
   zoom: 15,
+  
+  // ラベル表示の設定
+  labelSettings: {
+    minZoomForLabels: 13,    // ラベル表示の最小ズームレベル
+    maxLabelsLowZoom: 20,    // 低ズーム時の最大ラベル数
+    maxLabelsHighZoom: 100,  // 高ズーム時の最大ラベル数
+    updateThrottleMs: 250    // 更新頻度制御（ミリ秒）
+  }
 };
+
+// グローバル変数：ラベル管理
+let polygonLabels = new Map(); // name -> marker のマッピング
+let polygonFeatures = [];      // すべてのポリゴンフィーチャー
+let lastUpdateTime = 0;        // 最後の更新時刻
 
 // ページ読み込み時に開始
 window.addEventListener("DOMContentLoaded", bootstrap);
@@ -41,7 +54,7 @@ function loadGoogleMaps(apiKey) {
     const script = document.createElement("script");
     script.dataset.gmaps = "1";
     script.async = true;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&callback=__initMap`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=geometry&callback=__initMap`;
     window.__initMap = () => resolve();
     script.onerror = reject;
     document.head.appendChild(script);
@@ -66,8 +79,16 @@ async function initMapWithData() {
   const statusData = await fetchStatus(CONFIG.statusEndpoint);
   applyStatusColors(map, statusData);
   
-  // ポリゴンに数字ラベルを表示
-  addPolygonLabels(map);
+  // ポリゴンデータを収集
+  collectPolygonFeatures(map);
+  
+  // 初期ラベル表示
+  updatePolygonLabels(map);
+  
+  // マップ移動・ズームイベントでラベル更新
+  map.addListener('bounds_changed', () => {
+    throttledUpdateLabels(map);
+  });
   
   // ポリゴンクリックイベントを追加
   addPolygonClickEvents(map, infoWindow);
@@ -128,25 +149,13 @@ function statusColor(status) {
   }
 }
 
-// ポリゴンに数字ラベルを追加する関数
-function addPolygonLabels(map) {
-  console.log("Starting addPolygonLabels");
-  let polygonCount = 0;
-  
+// ポリゴンフィーチャーを収集する関数
+function collectPolygonFeatures(map) {
+  polygonFeatures = [];
   map.data.forEach((feature) => {
     const geometryType = feature.getGeometry().getType();
-    console.log(`Feature found: type=${geometryType}, name=${feature.getProperty("name")}`);
-    
     if (geometryType === 'Polygon') {
-      polygonCount++;
       const name = String(feature.getProperty("name"));
-      
-      // nameの値をそのまま表示（数字のみ抽出せず、nameの値全体を使用）
-      const labelText = name || "?";
-      
-      console.log(`Processing polygon: ${name} -> label: ${labelText}`);
-      
-      // ポリゴンの中心座標を計算
       const bounds = new google.maps.LatLngBounds();
       const geometry = feature.getGeometry();
       
@@ -158,35 +167,123 @@ function addPolygonLabels(map) {
       });
       
       const center = bounds.getCenter();
-      console.log(`Polygon center: lat=${center.lat()}, lng=${center.lng()}`);
       
-      // ポリゴンの中央にラベルマーカーを配置
-      const label = new google.maps.Marker({
-        position: center,
-        map: map,
-        label: {
-          text: labelText,
-          color: '#FFFFFF',
-          fontWeight: 'bold',
-          fontSize: '18px'
-        },
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 20,
-          fillColor: '#2c3e50',
-          fillOpacity: 0.9,
-          strokeColor: '#FFFFFF',
-          strokeWeight: 3
-        },
-        title: `エリア ${name}`, // ホバー時に表示
-        zIndex: 1000 // ポリゴンより上に表示
+      polygonFeatures.push({
+        feature: feature,
+        name: name,
+        center: center,
+        bounds: bounds
       });
-      
-      console.log(`Created marker for ${name}`);
     }
   });
+  console.log(`Collected ${polygonFeatures.length} polygon features`);
+}
+
+// スロットル制御付きのラベル更新
+function throttledUpdateLabels(map) {
+  const now = Date.now();
+  if (now - lastUpdateTime < CONFIG.labelSettings.updateThrottleMs) {
+    return;
+  }
+  lastUpdateTime = now;
   
-  console.log(`Total polygons processed: ${polygonCount}`);
+  // 少し遅延させて更新（連続呼び出しを防ぐ）
+  setTimeout(() => updatePolygonLabels(map), 50);
+}
+
+// 軽量化されたポリゴンラベル更新関数
+function updatePolygonLabels(map) {
+  const zoom = map.getZoom();
+  const bounds = map.getBounds();
+  
+  // ズームレベルが低すぎる場合はラベルを表示しない
+  if (zoom < CONFIG.labelSettings.minZoomForLabels) {
+    clearAllLabels();
+    return;
+  }
+  
+  // 可視域内のポリゴンを特定
+  const visiblePolygons = polygonFeatures.filter(poly => {
+    return bounds && bounds.contains(poly.center);
+  });
+  
+  // ズームレベルに応じた最大表示数を決定
+  const maxLabels = zoom >= 16 
+    ? CONFIG.labelSettings.maxLabelsHighZoom 
+    : CONFIG.labelSettings.maxLabelsLowZoom;
+  
+  // 距離でソート（中心に近いものから表示）
+  const mapCenter = map.getCenter();
+  visiblePolygons.sort((a, b) => {
+    const distA = google.maps.geometry.spherical.computeDistanceBetween(mapCenter, a.center);
+    const distB = google.maps.geometry.spherical.computeDistanceBetween(mapCenter, b.center);
+    return distA - distB;
+  });
+  
+  // 表示する必要があるポリゴンを決定
+  const toShow = new Set(visiblePolygons.slice(0, maxLabels).map(p => p.name));
+  
+  // 不要なラベルを削除
+  for (const [name, marker] of polygonLabels) {
+    if (!toShow.has(name)) {
+      marker.setMap(null);
+      polygonLabels.delete(name);
+    }
+  }
+  
+  // 新しいラベルを作成
+  let createdCount = 0;
+  for (const poly of visiblePolygons.slice(0, maxLabels)) {
+    if (!polygonLabels.has(poly.name)) {
+      createPolygonLabel(map, poly);
+      createdCount++;
+    }
+  }
+  
+  console.log(`Labels: ${polygonLabels.size} displayed, ${createdCount} created, zoom: ${zoom}`);
+}
+
+// 個別のポリゴンラベルを作成
+function createPolygonLabel(map, polygonData) {
+  const { name, center } = polygonData;
+  const labelText = name || "?";
+  
+  const marker = new google.maps.Marker({
+    position: center,
+    map: map,
+    label: {
+      text: labelText,
+      color: '#FFFFFF',
+      fontWeight: 'bold',
+      fontSize: '16px'
+    },
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 18,
+      fillColor: '#2c3e50',
+      fillOpacity: 0.9,
+      strokeColor: '#FFFFFF',
+      strokeWeight: 2
+    },
+    title: `エリア ${name}`,
+    zIndex: 1000
+  });
+  
+  polygonLabels.set(name, marker);
+}
+
+// すべてのラベルをクリア
+function clearAllLabels() {
+  for (const [name, marker] of polygonLabels) {
+    marker.setMap(null);
+  }
+  polygonLabels.clear();
+}
+
+// レガシー関数（互換性のため残す）
+function addPolygonLabels(map) {
+  console.log("Legacy addPolygonLabels called - using new optimized version");
+  updatePolygonLabels(map);
 }
 
 // ポリゴンクリックイベントを追加する関数
