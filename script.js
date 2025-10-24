@@ -54,6 +54,10 @@ async function initMapWithData() {
     center: CONFIG.center,
     zoom: CONFIG.zoom,
     mapId: undefined, // 必要ならスタイル用のMapID
+    // 初期描画を軽くするため、重いUIはオフ（必要に応じて戻せます）
+    fullscreenControl: true,
+    streetViewControl: false,
+    mapTypeControl: true,
   });
 
   // InfoWindowを作成（クリック時に使用）
@@ -106,10 +110,10 @@ function applyStatusColors(map, statusMap) {
       // ポリゴンのスタイル
       return {
         fillColor: color, // 塗りつぶしの色
-        fillOpacity: 0.6, // 塗りつぶしの透明度
-        strokeColor: "#444444",
+        fillOpacity: 0.45, // 少し軽め
+        strokeColor: "#666",
         strokeOpacity: 0.7, // 線の透明度
-        strokeWeight: 1, // 線の太さ
+        strokeWeight: 0.9, // 線の太さ
       };
     }
   });
@@ -133,7 +137,7 @@ function addPolygonClickEvents(map, infoWindow) {
     
     if (geometryType === 'Polygon') {
       const name = feature.getProperty("name");
-      const content = `<div style="font-weight: bold; font-size: 14px;">エリア ${name}</div>`;
+      const content = `<div style="font-weight: bold; font-size: 16px;">エリア ${name}</div>`;
       
       infoWindow.setContent(content);
       infoWindow.setPosition(event.latLng);
