@@ -1,7 +1,7 @@
 // 設定：Apps Scriptのエンドポイント
 const CONFIG = {
   // doGet() が返すキーAPI（JSON: { key: "..." }）
-  keyEndpoint: "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?type=key",
+  keyEndpoint: "https://script.google.com/macros/s/1x6Hh6WZ0ykBokLmem8EnRy9WuGxjYQxntWOj-cSlTDkiiKBtvp_UNnOq/exec?type=key",
   // doGet() が返すステータスAPI（JSON配列: [{id, status, ...}]）
   statusEndpoint: "https://script.google.com/macros/s/AKfycbwCgVpr2kFplLSTBVh8S00msAlg3X6E0AoZX4TRHpJTvFK2-QosLWh2UkaTks5k8IXWWg/exec",
   // GeoJSONファイルのパス（GitHub Pagesに配置）
