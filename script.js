@@ -245,9 +245,12 @@ function updatePolygonLabels(map) {
 
 // 個別のポリゴンラベルを作成
 function createPolygonLabel(map, polygonData) {
-  const { name, center } = polygonData;
+  const { name, center, status } = polygonData;
   const labelText = name || "?";
-  
+
+  // ステータスに応じた色を取得
+  const labelColor = statusColor(status);
+
   const marker = new google.maps.Marker({
     position: center,
     map: map,
@@ -260,12 +263,12 @@ function createPolygonLabel(map, polygonData) {
     icon: {
       path: google.maps.SymbolPath.CIRCLE,
       scale: 18,
-      fillColor: '#2c3e50',
+      fillColor: labelColor, // ステータス色を適用
       fillOpacity: 0.9,
       strokeColor: '#FFFFFF',
       strokeWeight: 2
     },
-    title: `エリア ${name}`,
+    title: `エリア ${name} (${status})`, // ステータスも表示
     zIndex: 1000
   });
   
