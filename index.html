@@ -4,16 +4,39 @@
   <meta charset="utf-8">
   <title>KPG Map</title>
   <style>#map { height: 600px; width: 100%; }</style>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC4IGLPtG-Ql2wKO9VePaPFiRkJPZlhVa4"></script> 
-  <!--API KEY:  AIzaSyC4IGLPtG-Ql2wKO9VePaPFiRkJPZlhVa4 -->
 </head>
 <body>
   <h2>KPG Map</h2>
   <div id="map"></div>
   <script>
-    // 利用時に呼び出す
-    function getApiKey() {
-      return PropertiesService.getScriptProperties().getProperty('MAPS_API_KEY');
+    // Google Apps Script から API キーを取得する関数
+    async function getApiKey() {
+      try {
+        // Google Apps Script の Web App エンドポイントを呼び出し
+        const response = await fetch('https://script.google.com/macros/s/AKfycbwLnlUbMAiG4qBCRUNhtQXdEmC0uY4iizOjIsb8nWZwVWUgpteM7TCzxtQ0IniA2V6R/exec');
+        const data = await response.json();
+        return data.apiKey;
+      } catch (error) {
+        console.error('API key取得エラー:', error);
+        return null;
+      }
+    }
+
+    // Google Maps JavaScript APIを動的に読み込む関数
+    async function loadGoogleMapsAPI() {
+      const apiKey = await getApiKey();
+      if (!apiKey) {
+        console.error('API keyが取得できませんでした');
+        return;
+      }
+      
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
     }
   </script>
   <script>
@@ -24,22 +47,22 @@
       });
 
       // スプレッドシートのデータを取得
-      const res = await fetch(getApiKey);
-      const rows = await res.json();
-      const byId = Object.fromEntries(rows.map(r => [String(r.area_id), r]));
+      // const res = await fetch(getApiKey);
+      // const rows = await res.json();
+      // const byId = Object.fromEntries(rows.map(r => [String(r.area_id), r]));
 
       // GeoJSONを読み込み
       map.data.loadGeoJson("https://raw.githubusercontent.com/TKalimpong/kpg-map/refs/heads/main/map.geojson");
 
       // スタイル設定
       map.data.setStyle(feature => {
-        const row = byId[String(feature.getProperty("name"))]; // GeoJSONのidとシートのarea_idを対応
+        // const row = byId[String(feature.getProperty("name"))]; // GeoJSONのidとシートのarea_idを対応
         let color = "#ccc";
-        if (row) {
-          if (row.status == "1year") color = "green";
-          else if (row.status == "Do") color = "blue";
-          else if (row.status == "Re") color = "gray";
-        }
+        // if (row) {
+        //   if (row.status == "1year") color = "green";
+        //   else if (row.status == "Do") color = "blue";
+        //   else if (row.status == "Re") color = "gray";
+        // }
         return { fillColor: color, strokeColor: "#333", strokeWeight: 1, fillOpacity: 0.6, clickable: true, label: feature.getProperty("name")};
       });
 
@@ -72,7 +95,17 @@
     
     
 
-    window.onload = initMap;
+    // 初期化関数を非同期で実行
+    async function init() {
+      try {
+        await loadGoogleMapsAPI();
+        await initMap();
+      } catch (error) {
+        console.error('マップの初期化に失敗しました:', error);
+      }
+    }
+
+    window.onload = init;
   </script>
 </body>
 </html>
