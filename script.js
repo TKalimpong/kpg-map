@@ -147,7 +147,7 @@ function statusColor(status) {
     case "recentlydone": return "#e74c3c";   // 赤
     case "doing": return "#f39c12";    // オレンジ
     case "campaign": return "#2ecc71";   // 緑
-    default: return "#363968ff";           // 濃い目の青
+    default: return null;           // 色変更なし
   }
 }
 
