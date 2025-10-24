@@ -154,6 +154,9 @@ function statusColor(status) {
 // ポリゴンフィーチャーを収集する関数
 function collectPolygonFeatures(map) {
   polygonFeatures = [];
+  console.log("Status data map size:", statusDataMap.size);
+  console.log("Status data keys:", Array.from(statusDataMap.keys()));
+  
   map.data.forEach((feature) => {
     const geometryType = feature.getGeometry().getType();
     if (geometryType === 'Polygon') {
@@ -173,6 +176,8 @@ function collectPolygonFeatures(map) {
       // ステータス情報を取得
       const statusRow = statusDataMap.get(name);
       const status = statusRow?.status ?? "unknown";
+      
+      console.log(`Polygon: ${name}, Status: ${status}, StatusRow:`, statusRow);
       
       polygonFeatures.push({
         feature: feature,
@@ -238,16 +243,30 @@ function updatePolygonLabels(map) {
     }
   }
   
-  // 新しいラベルを作成
+  // 新しいラベルを作成または更新
   let createdCount = 0;
+  let updatedCount = 0;
   for (const poly of visiblePolygons.slice(0, maxLabels)) {
-    if (!polygonLabels.has(poly.name)) {
+    const existingMarker = polygonLabels.get(poly.name);
+    if (!existingMarker) {
       createPolygonLabel(map, poly);
       createdCount++;
+    } else {
+      // 既存のマーカーがある場合、ステータス色を確認して必要に応じて更新
+      const currentColor = statusColor(poly.status);
+      const currentIcon = existingMarker.getIcon();
+      
+      if (!currentIcon || currentIcon.fillColor !== currentColor) {
+        // 色が違う場合は既存マーカーを削除して新しく作成
+        existingMarker.setMap(null);
+        polygonLabels.delete(poly.name);
+        createPolygonLabel(map, poly);
+        updatedCount++;
+      }
     }
   }
   
-  console.log(`Labels: ${polygonLabels.size} displayed, ${createdCount} created, zoom: ${zoom}`);
+  console.log(`Labels: ${polygonLabels.size} displayed, ${createdCount} created, ${updatedCount} updated, zoom: ${zoom}`);
 }
 
 // 個別のポリゴンラベルを作成
@@ -257,6 +276,8 @@ function createPolygonLabel(map, polygonData) {
 
   // ステータスに応じた色を取得
   const labelColor = statusColor(status);
+  
+  console.log(`Creating label for ${name}: status=${status}, color=${labelColor}`);
 
   const marker = new google.maps.Marker({
     position: center,
