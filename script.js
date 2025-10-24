@@ -296,7 +296,7 @@ function createPolygonLabel(map, polygonData) {
       strokeColor: '#FFFFFF',
       strokeWeight: 2
     },
-    title: `エリア ${name} (${status})`, // ステータスも表示
+    title: `${name} (${status})`, // ステータスも表示
     zIndex: 1000
   });
   
@@ -324,8 +324,11 @@ function addPolygonClickEvents(map, infoWindow) {
     const geometryType = feature.getGeometry().getType();
     
     if (geometryType === 'Polygon') {
-      const name = feature.getProperty("name");
-      const content = `<div style="font-weight: bold; font-size: 14px;">エリア ${name}</div>`;
+      const name = String(feature.getProperty("name"));
+      // ステータスを取得（なければ unknown）
+      const row = statusDataMap.get(name);
+      const status = row?.status ?? "unknown";
+      const content = `<div style="font-weight: bold; font-size: 14px;">${name}（${status}）</div>`;
       
       infoWindow.setContent(content);
       infoWindow.setPosition(event.latLng);
