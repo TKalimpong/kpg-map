@@ -8,7 +8,7 @@ const CONFIG = {
   geojsonUrl: "https://tkalimpong.github.io/kpg-map/map.geojson",
   // 初期中心・ズーム
   center: { lat: 27.059542543488494, lng: 88.46901912492227 },
-  zoom: 10,
+  zoom: 15,
 };
 
 // ページ読み込み時に開始
@@ -113,9 +113,9 @@ function applyStatusColors(map, statusMap) {
 function statusColor(status) {
   switch (String(status).toLowerCase()) {
     case "4to24months": return "#2ecc71";     // 緑
-    case "RecentlyDone": return "#e74c3c";   // 赤
-    case "Doing": return "#f39c12";    // オレンジ
-    case "Neglected": return "#3498db";   // 青
+    case "recentlydone": return "#e74c3c";   // 赤
+    case "doing": return "#f39c12";    // オレンジ
+    case "neglected": return "#3498db";   // 青
     default: return "#95a5a6";           // グレー
   }
 }
