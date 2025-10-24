@@ -69,11 +69,6 @@ async function initMapWithData() {
   // ポリゴンクリックイベントを追加
   addPolygonClickEvents(map, infoWindow);
 
-  // 定期更新（1日ごと）しかしリロードのたびに更新されるため不要かも
-//   setInterval(async () => {
-//     const latest = await fetchStatus(CONFIG.statusEndpoint);
-//     applyStatusColors(map, latest);
-//   }, 86400000);
 }
 
 function loadGeoJson(map, url) {
@@ -107,13 +102,7 @@ function applyStatusColors(map, statusMap) {
     // ステータス→色ルール
     const color = statusColor(status);
 
-    // ポリゴンのみ表示（ポイントは非表示）
-    if (geometryType === 'Point') {
-      // ポイントを非表示にする
-      return {
-        visible: false
-      };
-    } else {
+    if (geometryType === 'Polygon') {
       // ポリゴンのスタイル
       return {
         fillColor: color, // 塗りつぶしの色
@@ -136,7 +125,6 @@ function statusColor(status) {
   }
 }
 
-// ポイントに数字ラベルを追加する関数
 // ポリゴンクリックイベントを追加する関数
 function addPolygonClickEvents(map, infoWindow) {
   map.data.addListener('click', (event) => {
