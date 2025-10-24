@@ -139,7 +139,7 @@ function addPolygonLabels(map) {
     
     if (geometryType === 'Polygon') {
       polygonCount++;
-      const name = feature.getProperty("name");
+      const name = String(feature.getProperty("name"));
       
       // nameの値をそのまま表示（数字のみ抽出せず、nameの値全体を使用）
       const labelText = name || "?";
