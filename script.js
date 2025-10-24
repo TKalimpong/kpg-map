@@ -54,6 +54,10 @@ async function initMapWithData() {
     center: CONFIG.center,
     zoom: CONFIG.zoom,
     mapId: undefined, // 必要ならスタイル用のMapID
+    // 初期描画を軽くするため、重いUIはオフ（必要に応じて戻せます）
+    fullscreenControl: false,
+    streetViewControl: false,
+    mapTypeControl: false,
   });
 
   // InfoWindowを作成（クリック時に使用）
@@ -62,15 +66,32 @@ async function initMapWithData() {
   // GeoJSON読み込み
   await loadGeoJson(map, CONFIG.geojsonUrl);
 
-  // ステータス取得 → 色適用
-  const statusData = await fetchStatus(CONFIG.statusEndpoint);
-  applyStatusColors(map, statusData);
-  
-  // ポイントに数字ラベルを表示
-  addPointLabels(map);
-  
+  // まずは軽量な暫定スタイル（ステータス未反映）
+  map.data.setStyle({
+    fillColor: "#95a5a6",
+    fillOpacity: 0.25,
+    strokeColor: "#777",
+    strokeOpacity: 0.6,
+    strokeWeight: 0.8,
+  });
+
   // ポリゴンクリックイベントを追加
   addPolygonClickEvents(map, infoWindow);
+
+  // ポイント数が多いと重くなるため、ズーム・ビューポートに応じて動的に数字ラベルを描画
+  initPointLabelManager(map);
+
+  // 初回アイドル後（地図が落ち着いてから）にステータス取得→色反映（初期体感を軽く）
+  const onceIdle = google.maps.event.addListenerOnce(map, "idle", async () => {
+    try {
+      const statusData = await fetchStatus(CONFIG.statusEndpoint);
+      applyStatusColors(map, statusData);
+      // スタイル変更後に必要ならラベルを再同期
+      schedulePointLabelUpdate(map);
+    } catch (e) {
+      console.error("[status] failed:", e);
+    }
+  });
 
   // 定期更新（1日ごと）しかしリロードのたびに更新されるため不要かも
 //   setInterval(async () => {
@@ -112,25 +133,16 @@ function applyStatusColors(map, statusMap) {
 
     // ポイントとポリゴンで異なるスタイルを適用
     if (geometryType === 'Point') {
-      // ポイントは小さくして数字ラベルを目立たせる
-      return {
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 4,
-          fillColor: color,
-          fillOpacity: 0.8,
-          strokeColor: '#333',
-          strokeWeight: 1
-        }
-      };
+      // Dataレイヤー側のポイント描画はオフにし、軽量な独自ラベル（Marker）に委ねる
+      return { visible: false };
     } else {
       // ポリゴンのスタイル
       return {
         fillColor: color, // 塗りつぶしの色
-        fillOpacity: 0.6, // 塗りつぶしの透明度
-        strokeColor: "#444444",
+        fillOpacity: 0.45, // 少し軽め
+        strokeColor: "#666",
         strokeOpacity: 0.7, // 線の透明度
-        strokeWeight: 1, // 線の太さ
+        strokeWeight: 0.9, // 線の太さ
       };
     }
   });
@@ -146,40 +158,98 @@ function statusColor(status) {
   }
 }
 
-// ポイントに数字ラベルを追加する関数
-function addPointLabels(map) {
+// ========================= 軽量表示のためのラベル管理 =========================
+const __labelStore = { markers: new Map(), scheduled: false };
+
+function initPointLabelManager(map) {
+  // 初回・移動・ズーム時に、必要なポイントだけラベルを表示
+  const update = () => schedulePointLabelUpdate(map);
+  google.maps.event.addListener(map, 'idle', update);
+  google.maps.event.addListener(map, 'zoom_changed', update);
+  // 初期呼び出し
+  schedulePointLabelUpdate(map);
+}
+
+function schedulePointLabelUpdate(map) {
+  if (__labelStore.scheduled) return;
+  __labelStore.scheduled = true;
+  const cb = () => {
+    __labelStore.scheduled = false;
+    try { updatePointLabels(map); } catch (e) { console.error(e); }
+  };
+  if (window.requestIdleCallback) {
+    requestIdleCallback(cb, { timeout: 200 });
+  } else {
+    setTimeout(cb, 50);
+  }
+}
+
+function updatePointLabels(map) {
+  const bounds = map.getBounds();
+  if (!bounds) return; // まだ初期化途中
+  const zoom = map.getZoom() || 0;
+
+  // ズームが低いときは全ラベルを撤去（負荷軽減）
+  if (zoom < 16) {
+    clearAllPointLabels();
+    return;
+  }
+
+  // 可視領域にあるポイントのみラベル作成
+  const alive = new Set();
   map.data.forEach((feature) => {
-    const geometryType = feature.getGeometry().getType();
-    if (geometryType === 'Point') {
-      const name = feature.getProperty("name");
-      const position = feature.getGeometry().get();
-      
-      // 数字を抽出（例: "Point 1" → "1", "ポイント 77" → "77"）
-      const numberMatch = name.match(/(\d+)/);
-      const labelText = numberMatch ? numberMatch[1] : name;
-      
-      // マーカーラベルを作成
-      const label = new google.maps.Marker({
-        position: {lat: position.lat(), lng: position.lng()},
-        map: map,
-        label: {
-          text: labelText,
-          color: '#FFFFFF',
-          fontWeight: 'bold',
-          fontSize: '12px'
-        },
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 12,
-          fillColor: '#9c27b0',
-          fillOpacity: 0.8,
-          strokeColor: '#FFFFFF',
-          strokeWeight: 2
-        },
-        title: name // ホバー時に表示
-      });
-    }
+    if (feature.getGeometry().getType() !== 'Point') return;
+    const name = feature.getProperty('name');
+    if (!name) return;
+    const pos = feature.getGeometry().get();
+    const latLng = new google.maps.LatLng(pos.lat(), pos.lng());
+    if (!bounds.contains(latLng)) return;
+
+    const key = String(name);
+    alive.add(key);
+    if (__labelStore.markers.has(key)) return; // 既存
+
+    // 数字を抽出（例: "Point 1" → "1", "ポイント 77" → "77"）
+    const numberMatch = key.match(/(\d+)/);
+    const labelText = numberMatch ? numberMatch[1] : key;
+
+    const marker = new google.maps.Marker({
+      position: latLng,
+      map,
+      optimized: true, // キャンバス最適化
+      label: {
+        text: labelText,
+        color: '#FFFFFF',
+        fontWeight: 'bold',
+        fontSize: '12px'
+      },
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 11,
+        fillColor: '#9c27b0',
+        fillOpacity: 0.85,
+        strokeColor: '#FFFFFF',
+        strokeWeight: 2
+      },
+      title: key
+    });
+    __labelStore.markers.set(key, marker);
   });
+
+  // 画面外に出たものは破棄
+  for (const [key, marker] of __labelStore.markers) {
+    if (!alive.has(key)) {
+      marker.setMap(null);
+      __labelStore.markers.delete(key);
+    }
+  }
+}
+
+function clearAllPointLabels() {
+  for (const [, marker] of __labelStore.markers) {
+    marker.setMap(null);
+  }
+  __labelStore.markers.clear();
 }
 
 // ポリゴンクリックイベントを追加する関数
