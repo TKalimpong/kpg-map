@@ -352,8 +352,8 @@ function addMyLocationControl(map) {
   const controlDiv = document.createElement('div');
   const controlBtn = document.createElement('button');
   controlBtn.type = 'button';
-  controlBtn.textContent = '現在地';
-  controlBtn.title = '現在地の表示/停止';
+  controlBtn.textContent = 'Location';
+  controlBtn.title = 'Toggle current location display';
   Object.assign(controlBtn.style, {
     background: '#fff',
     border: '2px solid #fff',
@@ -423,7 +423,7 @@ function startMyLocation(map) {
             strokeColor: '#fff',
             strokeWeight: 2
           },
-          title: '現在地'
+          title: 'Location'
         });
       } else {
         myLocationMarker.setPosition(latLng);
