@@ -92,15 +92,18 @@ function loadGoogleMaps(apiKey) {
 }
 
 async function initMapWithData() {
+  // 必要なライブラリを確実にロード（新ローダー仕様に対応）
+  const { Map, InfoWindow } = await google.maps.importLibrary('maps');
+  await google.maps.importLibrary('geometry');
   // 地図を初期化
-  const map = new google.maps.Map(document.getElementById("map"), {
+  const map = new Map(document.getElementById("map"), {
     center: CONFIG.center,
     zoom: CONFIG.zoom,
     mapId: undefined, // 必要ならスタイル用のMapID
   });
 
   // InfoWindowを作成（クリック時に使用）
-  const infoWindow = new google.maps.InfoWindow();
+  const infoWindow = new InfoWindow();
 
   // GeoJSON読み込み
   await loadGeoJson(map, CONFIG.geojsonUrl);
