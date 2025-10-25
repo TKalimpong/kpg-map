@@ -56,36 +56,14 @@ async function fetchApiKey(url) {
 function loadGoogleMaps(apiKey) {
   return new Promise((resolve, reject) => {
     const existing = document.querySelector("script[data-gmaps]");
-    if (existing) {
-      // 既に読み込み済みであれば必要ライブラリを確実に読み込んでから解決
-      if (window.google?.maps?.importLibrary) {
-        Promise.all([
-          google.maps.importLibrary('maps'),
-          google.maps.importLibrary('geometry')
-        ]).then(() => resolve(), reject);
-      } else {
-        resolve();
-      }
-      return;
-    }
+    if (existing) return resolve();
 
     const script = document.createElement("script");
     script.dataset.gmaps = "1";
     script.async = true;
     script.defer = true; // async defer を両方指定
-    // ベストプラクティス: loading=async + v=weekly を使用し、callback は使わず importLibrary で待機
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&loading=async&v=weekly`;
-    script.onload = async () => {
-      try {
-        if (window.google?.maps?.importLibrary) {
-          await google.maps.importLibrary('maps');
-          await google.maps.importLibrary('geometry');
-        }
-        resolve();
-      } catch (e) {
-        reject(e);
-      }
-    };
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=geometry&callback=__initMap`;
+    window.__initMap = () => resolve();
     script.onerror = reject;
     document.head.appendChild(script);
   });
