@@ -164,8 +164,8 @@ function statusColor(status) {
 // ポリゴンフィーチャーを収集する関数
 function collectPolygonFeatures(map) {
   polygonFeatures = [];
-  console.log("Status data map size:", statusDataMap.size);
-  console.log("Status data keys:", Array.from(statusDataMap.keys()));
+  // console.log("Status data map size:", statusDataMap.size);
+  // console.log("Status data keys:", Array.from(statusDataMap.keys()));
   
   map.data.forEach((feature) => {
     const geometryType = feature.getGeometry().getType();
@@ -187,7 +187,7 @@ function collectPolygonFeatures(map) {
       const statusRow = statusDataMap.get(name);
       const status = statusRow?.status ?? "unknown";
       
-      console.log(`Polygon: ${name}, Status: ${status}, StatusRow:`, statusRow);
+      // console.log(`Polygon: ${name}, Status: ${status}, StatusRow:`, statusRow);
       
       polygonFeatures.push({
         feature: feature,
@@ -198,7 +198,7 @@ function collectPolygonFeatures(map) {
       });
     }
   });
-  console.log(`Collected ${polygonFeatures.length} polygon features`);
+  // console.log(`Collected ${polygonFeatures.length} polygon features`);
 }
 
 // スロットル制御付きのラベル更新
@@ -276,7 +276,7 @@ function updatePolygonLabels(map) {
     }
   }
   
-  console.log(`Labels: ${polygonLabels.size} displayed, ${createdCount} created, ${updatedCount} updated, zoom: ${zoom}`);
+  // console.log(`Labels: ${polygonLabels.size} displayed, ${createdCount} created, ${updatedCount} updated, zoom: ${zoom}`);
 }
 
 // 個別のポリゴンラベルを作成
@@ -287,7 +287,7 @@ function createPolygonLabel(map, polygonData) {
   // ステータスに応じた色を取得
   const labelColor = statusColor(status);
   
-  console.log(`Creating label for ${name}: status=${status}, color=${labelColor}`);
+  // console.log(`Creating label for ${name}: status=${status}, color=${labelColor}`);
 
   const marker = new google.maps.Marker({
     position: center,
@@ -323,7 +323,7 @@ function clearAllLabels() {
 
 // レガシー関数（互換性のため残す）
 function addPolygonLabels(map) {
-  console.log("Legacy addPolygonLabels called - using new optimized version");
+  // console.log("Legacy addPolygonLabels called - using new optimized version");
   updatePolygonLabels(map);
 }
 
