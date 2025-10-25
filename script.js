@@ -153,7 +153,7 @@ function applyStatusColors(map, statusMap) {
 
 function statusColor(status) {
   switch (String(status).toLowerCase()) {
-    case "between4and18m": return "#3498db";     // 青
+    case "available": return "#3498db";     // 青
     case "recentlydone": return "#e74c3c";   // 赤
     case "doing": return "#f39c12";    // オレンジ
     case "campaign": return "#2ecc71";   // 緑
