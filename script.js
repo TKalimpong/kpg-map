@@ -25,6 +25,12 @@ let polygonFeatures = [];      // すべてのポリゴンフィーチャー
 let lastUpdateTime = 0;        // 最後の更新時刻
 let statusDataMap = new Map(); // ステータスデータの保存
 
+// 現在地表示用の状態
+let myLocationMarker = null;   // 現在地マーカー
+let myLocationCircle = null;   // 精度円
+let myLocationWatchId = null;  // watchPosition ID
+let myLocationFirstFix = false; // 初回測位でパンするためのフラグ
+
 // ページ読み込み時に開始
 window.addEventListener("DOMContentLoaded", bootstrap);
 
@@ -95,6 +101,9 @@ async function initMapWithData() {
   
   // ポリゴンクリックイベントを追加
   addPolygonClickEvents(map, infoWindow);
+
+  // 現在地コントロールを追加
+  addMyLocationControl(map);
 
 }
 
@@ -336,4 +345,142 @@ function addPolygonClickEvents(map, infoWindow) {
       infoWindow.open(map);
     }
   });
+}
+
+// 現在地コントロールを追加
+function addMyLocationControl(map) {
+  const controlDiv = document.createElement('div');
+  const controlBtn = document.createElement('button');
+  controlBtn.type = 'button';
+  controlBtn.textContent = '現在地';
+  controlBtn.title = '現在地の表示/停止';
+  Object.assign(controlBtn.style, {
+    background: '#fff',
+    border: '2px solid #fff',
+    borderRadius: '4px',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+    cursor: 'pointer',
+    margin: '10px',
+    padding: '8px 12px',
+    fontSize: '14px'
+  });
+  
+  function setActive(active) {
+    if (active) {
+      controlBtn.style.background = '#1a73e8';
+      controlBtn.style.color = '#fff';
+      controlBtn.style.borderColor = '#1a73e8';
+    } else {
+      controlBtn.style.background = '#fff';
+      controlBtn.style.color = '#000';
+      controlBtn.style.borderColor = '#fff';
+    }
+  }
+
+  controlBtn.addEventListener('click', () => {
+    if (myLocationWatchId == null) {
+      startMyLocation(map).then(() => setActive(true)).catch(() => setActive(false));
+    } else {
+      stopMyLocation();
+      setActive(false);
+    }
+  });
+
+  controlDiv.appendChild(controlBtn);
+  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(controlDiv);
+}
+
+// 現在地のウォッチ開始
+function startMyLocation(map) {
+  return new Promise((resolve, reject) => {
+    if (!('geolocation' in navigator)) {
+      console.warn('Geolocation is not supported in this browser');
+      reject(new Error('Geolocation unsupported'));
+      return;
+    }
+    if (myLocationWatchId != null) {
+      resolve();
+      return;
+    }
+
+    const onSuccess = (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const acc = Math.min(pos.coords.accuracy || 0, 800); // 半径の上限
+      const latLng = new google.maps.LatLng(lat, lng);
+
+      // マーカー作成 or 更新
+      if (!myLocationMarker) {
+        myLocationMarker = new google.maps.Marker({
+          position: latLng,
+          map,
+          zIndex: 2000,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: '#1a73e8',
+            fillOpacity: 1,
+            strokeColor: '#fff',
+            strokeWeight: 2
+          },
+          title: '現在地'
+        });
+      } else {
+        myLocationMarker.setPosition(latLng);
+      }
+
+      // 精度円作成 or 更新
+      if (!myLocationCircle) {
+        myLocationCircle = new google.maps.Circle({
+          map,
+          center: latLng,
+          radius: acc,
+          strokeColor: '#1a73e8',
+          strokeOpacity: 0.8,
+          strokeWeight: 1,
+          fillColor: '#1a73e8',
+          fillOpacity: 0.16,
+          zIndex: 1500
+        });
+      } else {
+        myLocationCircle.setCenter(latLng);
+        myLocationCircle.setRadius(acc);
+      }
+
+      if (!myLocationFirstFix) {
+        map.panTo(latLng);
+        myLocationFirstFix = true;
+      }
+
+      resolve();
+    };
+
+    const onError = (err) => {
+      console.warn('Geolocation error:', err);
+      reject(err);
+    };
+
+    myLocationWatchId = navigator.geolocation.watchPosition(onSuccess, onError, {
+      enableHighAccuracy: true,
+      maximumAge: 10000,
+      timeout: 15000
+    });
+  });
+}
+
+// 現在地ウォッチ停止
+function stopMyLocation() {
+  if (myLocationWatchId != null) {
+    navigator.geolocation.clearWatch(myLocationWatchId);
+    myLocationWatchId = null;
+  }
+  if (myLocationMarker) {
+    myLocationMarker.setMap(null);
+    myLocationMarker = null;
+  }
+  if (myLocationCircle) {
+    myLocationCircle.setMap(null);
+    myLocationCircle = null;
+  }
+  myLocationFirstFix = false;
 }
