@@ -3,7 +3,7 @@ const CONFIG = {
   // doGet() が返すキーAPI（JSON: { key: "..." }）
   keyEndpoint: "https://script.google.com/macros/s/AKfycbwCgVpr2kFplLSTBVh8S00msAlg3X6E0AoZX4TRHpJTvFK2-QosLWh2UkaTks5k8IXWWg/exec?type=key",
   // doGet() が返すステータスAPI（JSON配列: [{id, status, ...}]）
-  statusEndpoint: "https://script.google.com/macros/s/AKfycbwCgVpr2kFplLSTBVh8S00msAlg3X6E0AoZX4TRHpJTvFK2-QosLWh2UkaTks5k8IXWWg/exec?type=status",
+  : "https://script.google.com/macros/s/AKfycbwCgVpr2kFplLSTBVh8S00msAlg3X6E0AoZX4TRHpJTvFK2-QosLWh2UkaTks5k8IXWWg/exec?type=status",
   // GeoJSONファイルのパス（GitHub Pagesに配置）
   geojsonUrl: "https://tkalimpong.github.io/kpg-map/map.geojson",
   // 初期中心・ズーム
@@ -338,6 +338,7 @@ function addPolygonClickEvents(map, infoWindow) {
       // ステータスを取得（なければ unknown）
       const row = statusDataMap.get(name);
       const status = row?.status ?? "unknown";
+      const add_info = row?.add_info ?? "";
       const content = `<div style="font-weight: bold; font-size: 14px;">${name}（${status}-${add_info}）</div>`;
       
       infoWindow.setContent(content);
