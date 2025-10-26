@@ -3,7 +3,7 @@ const CONFIG = {
   // doGet() が返すキーAPI（JSON: { key: "..." }）
   keyEndpoint: "https://script.google.com/macros/s/AKfycbwCgVpr2kFplLSTBVh8S00msAlg3X6E0AoZX4TRHpJTvFK2-QosLWh2UkaTks5k8IXWWg/exec?type=key",
   // doGet() が返すステータスAPI（JSON配列: [{id, status, ...}]）
-  : "https://script.google.com/macros/s/AKfycbwCgVpr2kFplLSTBVh8S00msAlg3X6E0AoZX4TRHpJTvFK2-QosLWh2UkaTks5k8IXWWg/exec?type=status",
+  statusEndpoint: "https://script.google.com/macros/s/AKfycbwCgVpr2kFplLSTBVh8S00msAlg3X6E0AoZX4TRHpJTvFK2-QosLWh2UkaTks5k8IXWWg/exec?type=status",
   // GeoJSONファイルのパス（GitHub Pagesに配置）
   geojsonUrl: "https://tkalimpong.github.io/kpg-map/map.geojson",
   // 初期中心・ズーム
@@ -184,8 +184,9 @@ function collectPolygonFeatures(map) {
       const center = bounds.getCenter();
             
       // ステータス情報を取得
-      const statusRow = statusDataMap.get(name);
-      const status = statusRow?.status ?? "unknown";
+  const statusRow = statusDataMap.get(name);
+  const status = statusRow?.status ?? "unknown";
+  const addInfo = statusRow?.add_info ?? "";
       
       // console.log(`Polygon: ${name}, Status: ${status}, StatusRow:`, statusRow);
       
@@ -194,7 +195,8 @@ function collectPolygonFeatures(map) {
         name: name,
         center: center,
         bounds: bounds,
-        status: status
+        status: status,
+        addInfo: addInfo
       });
     }
   });
@@ -281,7 +283,7 @@ function updatePolygonLabels(map) {
 
 // 個別のポリゴンラベルを作成
 function createPolygonLabel(map, polygonData) {
-  const { name, center, status } = polygonData;
+  const { name, center, status, addInfo } = polygonData;
   const labelText = name || "?";
 
   // ステータスに応じた色を取得
@@ -306,7 +308,7 @@ function createPolygonLabel(map, polygonData) {
       strokeColor: '#FFFFFF',
       strokeWeight: 2
     },
-    title: `${name} (${status})`, // ステータスも表示
+    title: addInfo ? `${name} (${status} - ${addInfo})` : `${name} (${status})`, // ステータス + 追加情報
     zIndex: 1000
   });
   
@@ -339,7 +341,12 @@ function addPolygonClickEvents(map, infoWindow) {
       const row = statusDataMap.get(name);
       const status = row?.status ?? "unknown";
       const add_info = row?.add_info ?? "";
-      const content = `<div style="font-weight: bold; font-size: 14px;">${name}（${status}-${add_info}）</div>`;
+      const content = `
+        <div style="font-weight: bold; font-size: 14px;">
+          ${name}（${status}）
+        </div>
+        ${add_info ? `<div style="margin-top:4px; font-size: 12px; color:#333;">${add_info}</div>` : ''}
+      `;
       
       infoWindow.setContent(content);
       infoWindow.setPosition(event.latLng);
