@@ -338,7 +338,7 @@ function addPolygonClickEvents(map, infoWindow) {
       // ステータスを取得（なければ unknown）
       const row = statusDataMap.get(name);
       const status = row?.status ?? "unknown";
-      const content = `<div style="font-weight: bold; font-size: 14px;">${name}（${status}）</div>`;
+      const content = `<div style="font-weight: bold; font-size: 14px;">${name}（${status}-${add_info}）</div>`;
       
       infoWindow.setContent(content);
       infoWindow.setPosition(event.latLng);
