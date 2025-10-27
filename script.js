@@ -347,8 +347,13 @@ function addPolygonClickEvents(map, infoWindow) {
       const row = statusDataMap.get(name);
       const status = row?.status ?? "unknown";
       const add_info = row?.add_info ?? "";
-      const isDate = !isNaN(Date.parse(status)); //statusが日付かどうかチェック
-      const dateNote = isDate ? "Last used: " : "";
+      let formattedAddInfo = add_info;
+      const isDate = !isNaN(Date.parse(add_info)); //statusが日付かどうかチェック
+      if (isDate){
+        const d = new Date(add_info);
+        formattedAddInfo = `${d.getFullYear()}/${d.toLocaleString('en', {month: 'short'})}`;
+      }
+      const dateNote = isDate ? "Last used: " + formattedAddInfo: "";
       const content = `
         <div style="font-weight: bold; font-size: 14px;">
           ${name}（${status}）
