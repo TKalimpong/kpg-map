@@ -353,12 +353,12 @@ function addPolygonClickEvents(map, infoWindow) {
         const d = new Date(add_info);
         formattedAddInfo = `${d.getFullYear()}/${d.toLocaleString('en', {month: 'short'})}`;
       }
-      const dateNote = isDate ? "Last used: " + formattedAddInfo: "";
+      const dateNote = isDate ? "Last used: " + formattedAddInfo: add_info;
       const content = `
         <div style="font-weight: bold; font-size: 14px;">
           ${name}（${status}）
         </div>
-        ${dateNote}${add_info ? `<div style="margin-top:4px; font-size: 12px; color:#333;">${add_info}</div>` : ''}
+        ${add_info ? `<div style="margin-top:4px; font-size: 12px; color:#333;">${dateNote}</div>` : ''}
       `;
       
       infoWindow.setContent(content);
