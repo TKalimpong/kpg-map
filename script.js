@@ -153,10 +153,10 @@ function applyStatusColors(map, statusMap) {
 
 function statusColor(status) {
   switch (String(status).toLowerCase()) {
-    case "available_S": return "#3498db";     // 青
-    case "available_SC": return "#2980b9";   // 濃い青
-    case "available_L": return "#1abc5dff";   // 黄緑
-    case "available_LC" : return "#1c8548ff";   // 濃い緑
+    case "available_s": return "#3498db";     // 青
+    case "available_sc": return "#2980b9";   // 濃い青
+    case "available_l": return "#1abc5dff";   // 黄緑
+    case "available_lc" : return "#1c8548ff";   // 濃い緑
     case "recently_completed": return "#e74c3c";   // 赤
     case "in_use": return "#f39c12";    // オレンジ
     default: return "#95a5a6";           // グレー
