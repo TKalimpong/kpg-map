@@ -353,7 +353,7 @@ function addPolygonClickEvents(map, infoWindow) {
         <div style="font-weight: bold; font-size: 14px;">
           ${name}（${status}）
         </div>
-        ${add_info ? `<div style="margin-top:4px; font-size: 12px; color:#333;">${dateNote}${add_info}</div>` : ''}
+        ${dateNote}${add_info ? `<div style="margin-top:4px; font-size: 12px; color:#333;">${add_info}</div>` : ''}
       `;
       
       infoWindow.setContent(content);
