@@ -157,10 +157,12 @@ function applyStatusColors(map, statusMap) {
 
 function statusColor(status) {
   switch (String(status).toLowerCase()) {
-    case "between4and18m": return "#3498db";     // 青
-    case "recentlydone": return "#e74c3c";   // 赤
-    case "doing": return "#f39c12";    // オレンジ
-    case "campaign": return "#2ecc71";   // 緑
+    case "available_s": return "#3498db";     // 青
+    case "available_sc": return "#2980b9";   // 濃い青
+    case "available_l": return "#1abc5dff";   // 黄緑
+    case "available_lc" : return "#1c8548ff";   // 濃い緑
+    case "recently_completed": return "#e74c3c";   // 赤
+    case "in_use": return "#f39c12";    // オレンジ
     default: return "#95a5a6";           // グレー
   }
 }
@@ -188,8 +190,9 @@ function collectPolygonFeatures(map) {
       const center = bounds.getCenter();
             
       // ステータス情報を取得
-      const statusRow = statusDataMap.get(name);
-      const status = statusRow?.status ?? "unknown";
+  const statusRow = statusDataMap.get(name);
+  const status = statusRow?.status ?? "unknown";
+  const addInfo = statusRow?.add_info ?? "";
       
       // console.log(`Polygon: ${name}, Status: ${status}, StatusRow:`, statusRow);
       
@@ -198,7 +201,8 @@ function collectPolygonFeatures(map) {
         name: name,
         center: center,
         bounds: bounds,
-        status: status
+        status: status,
+        addInfo: addInfo
       });
     }
   });
@@ -285,7 +289,7 @@ function updatePolygonLabels(map) {
 
 // 個別のポリゴンラベルを作成
 function createPolygonLabel(map, polygonData) {
-  const { name, center, status } = polygonData;
+  const { name, center, status, addInfo } = polygonData;
   const labelText = name || "?";
 
   // ステータスに応じた色を取得
@@ -310,7 +314,7 @@ function createPolygonLabel(map, polygonData) {
       strokeColor: '#FFFFFF',
       strokeWeight: 2
     },
-    title: `${name} (${status})`, // ステータスも表示
+    title: addInfo ? `${name} (${status} - ${addInfo})` : `${name} (${status})`, // ステータス + 追加情報
     zIndex: 1000
   });
   
@@ -342,7 +346,20 @@ function addPolygonClickEvents(map, infoWindow) {
       // ステータスを取得（なければ unknown）
       const row = statusDataMap.get(name);
       const status = row?.status ?? "unknown";
-      const content = `<div style="font-weight: bold; font-size: 14px;">${name}（${status}）</div>`;
+      const add_info = row?.add_info ?? "";
+      let formattedAddInfo = '';
+      const isDate = !isNaN(Date.parse(add_info)); // add_infoが日付かどうかチェック
+      if (isDate){
+        const d = new Date(add_info);
+        formattedAddInfo = `${d.getFullYear()}/${d.toLocaleString('en', {month: 'short'})}`;
+      }
+      const dateNote = isDate ? "Last used: " + formattedAddInfo: add_info;
+      const content = `
+        <div style="font-weight: bold; font-size: 14px;">
+          ${name}（${status}）
+        </div>
+        ${add_info ? `<div style="margin-top:4px; font-size: 12px; color:#333;">${dateNote}</div>` : ''}
+      `;
       
       infoWindow.setContent(content);
       infoWindow.setPosition(event.latLng);
@@ -356,8 +373,8 @@ function addMyLocationControl(map) {
   const controlDiv = document.createElement('div');
   const controlBtn = document.createElement('button');
   controlBtn.type = 'button';
-  controlBtn.textContent = '現在地';
-  controlBtn.title = '現在地の表示/停止';
+  controlBtn.textContent = 'Location';
+  controlBtn.title = 'Toggle current location display';
   Object.assign(controlBtn.style, {
     background: '#fff',
     border: '2px solid #fff',
@@ -427,7 +444,7 @@ function startMyLocation(map) {
             strokeColor: '#fff',
             strokeWeight: 2
           },
-          title: '現在地'
+          title: 'Location'
         });
       } else {
         myLocationMarker.setPosition(latLng);
