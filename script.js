@@ -344,7 +344,7 @@ function addPolygonClickEvents(map, infoWindow) {
       const status = row?.status ?? "unknown";
       const add_info = row?.add_info ?? "";
       const isDate = !isNaN(Date.parse(status)); //statusが日付かどうかチェック
-      const dateNote = isDate ? "Last used: " + "";
+      const dateNote = isDate ? "Last used: " : "";
       const content = `
         <div style="font-weight: bold; font-size: 14px;">
           ${name}（${status}）
