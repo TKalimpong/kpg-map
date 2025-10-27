@@ -354,8 +354,6 @@ function addPolygonClickEvents(map, infoWindow) {
         formattedAddInfo = `${d.getFullYear()}/${d.toLocaleString('en', {month: 'short'})}`;
       }
       const dateNote = isDate ? "Last used: " + formattedAddInfo: add_info;
-      //上の変数すべてをログに出す
-      console.log(`Clicked Polygon: ${name}, Status: ${status}, Add Info: ${add_info}`);
       const content = `
         <div style="font-weight: bold; font-size: 14px;">
           ${name}（${status}）
