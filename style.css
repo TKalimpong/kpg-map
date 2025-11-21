@@ -15,3 +15,14 @@ header { padding: 12px 16px; border-bottom: 1px solid #eee; }
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
 }
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* 2列 */
+  grid-template-rows: auto auto auto; /* 3行 */
+  gap: 10px; /* 要素間の余白 */
+}
+.grid p {
+  border: 1px solid #333;
+  padding: 8px;
+  text-align: center;
+}
