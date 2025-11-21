@@ -81,6 +81,8 @@ async function initMapWithData() {
     fullscreenControl: true,
     streetViewControl: false,
     mapTypeControl: true,
+    // 一本指でドラッグ可能に（デフォルトは 'auto' だが明示的に設定）
+    gestureHandling: 'greedy', // 'greedy' = 一本指で操作可能、'cooperative' = Ctrl+スクロールまたは二本指
   });
 
   // InfoWindowを作成（クリック時に使用）
