@@ -336,11 +336,16 @@ function updatePolygonLabels(map) {
       const currentColor = statusColor(poly.status);
       const currentIcon = existingMarker.getIcon();
       
-      if (!currentIcon || currentIcon.fillColor !== currentColor) {
-        // 色が違う場合は既存マーカーを削除して新しく作成
-        existingMarker.setMap(null);
-        polygonLabels.delete(poly.name);
-        createPolygonLabel(map, poly);
+      if (currentIcon && currentIcon.fillColor !== currentColor) {
+        // 軽量化: マーカー再生成の代わりにアイコンのみ更新
+        existingMarker.setIcon({
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 18,
+          fillColor: currentColor,
+          fillOpacity: 0.9,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 2
+        });
         updatedCount++;
       }
     }
