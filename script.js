@@ -238,6 +238,8 @@ function collectPolygonFeatures(map) {
 }
 
 // スロットル制御付きのラベル更新（Safari対応強化版）
+let updateScheduled = false; // requestAnimationFrame キューイング用フラグ
+
 function throttledUpdateLabels(map) {
   const now = Date.now();
   
@@ -262,12 +264,16 @@ function throttledUpdateLabels(map) {
   
   lastUpdateTime = now;
   
-  // 少し遅延させて更新（連続呼び出しを防ぐ）
-  setTimeout(() => {
-    if (!isZooming) {
-      updatePolygonLabels(map);
-    }
-  }, 100); // Safari: 50ms→100ms に延長
+  // requestAnimationFrame でスムーズな更新をキューイング
+  if (!updateScheduled) {
+    updateScheduled = true;
+    requestAnimationFrame(() => {
+      updateScheduled = false;
+      if (!isZooming) {
+        updatePolygonLabels(map);
+      }
+    });
+  }
 }
 
 // 軽量化されたポリゴンラベル更新関数
