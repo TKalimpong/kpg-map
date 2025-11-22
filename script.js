@@ -13,8 +13,8 @@ const CONFIG = {
   // ラベル表示の設定
   labelSettings: {
     minZoomForLabels: 13,    // ラベル表示の最小ズームレベル
-    maxLabelsLowZoom: 50,    // 低ズーム時の最大ラベル数
-    maxLabelsHighZoom: 100,  // 高ズーム時の最大ラベル数
+    maxLabelsLowZoom: 40,    // 低ズーム時の最大ラベル数
+    maxLabelsHighZoom: 60,  // 高ズーム時の最大ラベル数
     updateThrottleMs: 300    // Safari対応: 更新頻度を少し緩く（250→400ms）
   }
 };
@@ -292,11 +292,18 @@ function updatePolygonLabels(map) {
     : CONFIG.labelSettings.maxLabelsLowZoom;
   
   // 距離でソート（中心に近いものから表示）
+  // 軽量化: 球面距離計算の代わりに平面距離の2乗で比較（順位は同じ）
   const mapCenter = map.getCenter();
+  const cLat = mapCenter.lat();
+  const cLng = mapCenter.lng();
   visiblePolygons.sort((a, b) => {
-    const distA = google.maps.geometry.spherical.computeDistanceBetween(mapCenter, a.center);
-    const distB = google.maps.geometry.spherical.computeDistanceBetween(mapCenter, b.center);
-    return distA - distB;
+    const dLatA = a.center.lat() - cLat;
+    const dLngA = a.center.lng() - cLng;
+    const dLatB = b.center.lat() - cLat;
+    const dLngB = b.center.lng() - cLng;
+    const distSqA = dLatA * dLatA + dLngA * dLngA;
+    const distSqB = dLatB * dLatB + dLngB * dLngB;
+    return distSqA - distSqB;
   });
   
   // 表示する必要があるポリゴンを決定
