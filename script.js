@@ -13,8 +13,8 @@ const CONFIG = {
   // ラベル表示の設定
   labelSettings: {
     minZoomForLabels: 13,    // ラベル表示の最小ズームレベル
-    maxLabelsLowZoom: 40,    // 低ズーム時の最大ラベル数
-    maxLabelsHighZoom: 60,  // 高ズーム時の最大ラベル数
+    maxLabelsLowZoom: 20,    // 低ズーム時の最大ラベル数
+    maxLabelsHighZoom: 40,  // 高ズーム時の最大ラベル数
     updateThrottleMs: 300    // Safari対応: 更新頻度を少し緩く（250→400ms）
   }
 };
