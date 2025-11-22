@@ -15,7 +15,7 @@ const CONFIG = {
     minZoomForLabels: 13,    // ラベル表示の最小ズームレベル
     maxLabelsLowZoom: 20,    // 低ズーム時の最大ラベル数
     maxLabelsHighZoom: 100,  // 高ズーム時の最大ラベル数
-    updateThrottleMs: 250    // 更新頻度制御（ミリ秒）
+    updateThrottleMs: 400    // Safari対応: 更新頻度を少し緩く（250→400ms）
   }
 };
 
@@ -24,6 +24,8 @@ let polygonLabels = new Map(); // name -> marker のマッピング
 let polygonFeatures = [];      // すべてのポリゴンフィーチャー
 let lastUpdateTime = 0;        // 最後の更新時刻
 let statusDataMap = new Map(); // ステータスデータの保存
+let isZooming = false;         // Safari対応: ズーム中フラグ
+let zoomEndTimer = null;       // Safari対応: ズーム終了検知タイマー
 
 // 現在地表示用の状態
 let myLocationMarker = null;   // 現在地マーカー
@@ -79,6 +81,8 @@ async function initMapWithData() {
     fullscreenControl: true,
     streetViewControl: false,
     mapTypeControl: true,
+    // 一本指でドラッグ可能に（デフォルトは 'auto' だが明示的に設定）
+    gestureHandling: 'greedy', // 'greedy' = 一本指で操作可能、'cooperative' = Ctrl+スクロールまたは二本指
   });
 
   // InfoWindowを作成（クリック時に使用）
@@ -98,9 +102,33 @@ async function initMapWithData() {
   // 初期ラベル表示
   updatePolygonLabels(map);
   
+  // Safari対応: zoom_changed イベントでズーム中フラグを設定
+  map.addListener('zoom_changed', () => {
+    isZooming = true;
+    if (zoomEndTimer) {
+      clearTimeout(zoomEndTimer);
+    }
+    // ズーム終了検知タイマー
+    zoomEndTimer = setTimeout(() => {
+      isZooming = false;
+    }, 500);
+  });
+  
   // マップ移動・ズームイベントでラベル更新
   map.addListener('bounds_changed', () => {
     throttledUpdateLabels(map);
+  });
+  
+  // Safari対応: idle イベントで確実に更新（ピンチ操作終了後）
+  map.addListener('idle', () => {
+    if (isZooming) {
+      isZooming = false;
+    }
+    // idle 時は確実に更新（ただし throttle は効かせる）
+    const now = Date.now();
+    if (now - lastUpdateTime > CONFIG.labelSettings.updateThrottleMs) {
+      updatePolygonLabels(map);
+    }
   });
   
   // ポリゴンクリックイベントを追加
@@ -209,16 +237,37 @@ function collectPolygonFeatures(map) {
   // console.log(`Collected ${polygonFeatures.length} polygon features`);
 }
 
-// スロットル制御付きのラベル更新
+// スロットル制御付きのラベル更新（Safari対応強化版）
 function throttledUpdateLabels(map) {
   const now = Date.now();
+  
+  // Safari対応: 更新頻度制御を厳格に
   if (now - lastUpdateTime < CONFIG.labelSettings.updateThrottleMs) {
     return;
   }
+  
+  // Safari対応: ズーム中は頻繁な更新を抑制
+  if (isZooming) {
+    // ズーム終了タイマーをリセット
+    if (zoomEndTimer) {
+      clearTimeout(zoomEndTimer);
+    }
+    // ズーム終了と判定するまで待機（Safari のピンチ操作対応）
+    zoomEndTimer = setTimeout(() => {
+      isZooming = false;
+      updatePolygonLabels(map);
+    }, 500); // 500ms 操作がなければズーム終了と判定
+    return;
+  }
+  
   lastUpdateTime = now;
   
   // 少し遅延させて更新（連続呼び出しを防ぐ）
-  setTimeout(() => updatePolygonLabels(map), 50);
+  setTimeout(() => {
+    if (!isZooming) {
+      updatePolygonLabels(map);
+    }
+  }, 100); // Safari: 50ms→100ms に延長
 }
 
 // 軽量化されたポリゴンラベル更新関数

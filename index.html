@@ -3,13 +3,20 @@
 <head>
   <meta charset="utf-8">
   <title>Status-linked map</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <!-- Safari対応: ピンチズーム時の挙動を最適化 -->
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes">
   <link rel="stylesheet" href="style.css">
   <script defer src="script.js"></script>
 </head>
 <body>
   <header>
-    <h1>Status-linked map</h1>
+    <div class="grid">
+      <p style="color:gray">✅ Gray:   Available (Never used before)</p>
+      <p style="color:orange">✖ Orange: In use</p>
+      <p style="color:green">✅ Green:  Available_l (have not been used for more than 12 months)</p>
+      <p style="color:red">✖ Red:    Recently completed</p>
+      <p style="color:blue">✅ Blue:   Available_s (used between 4 and 12 months ago)</p>
+    </div>
   </header>
   <main>
     <div id="map"></div>

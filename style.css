@@ -1,4 +1,29 @@
 * { box-sizing: border-box; }
-html, body { height: 100%; margin: 0; font-family: system-ui, sans-serif; }
+html, body { 
+  height: 100%; 
+  margin: 0; 
+  font-family: system-ui, sans-serif;
+  /* Safari対応: タッチ操作のスムーズさを向上 */
+  -webkit-overflow-scrolling: touch;
+  touch-action: manipulation;
+}
 header { padding: 12px 16px; border-bottom: 1px solid #eee; }
-#map { width: 100%; height: calc(100vh - 60px); }
+#map { 
+  width: 100%; 
+  height: calc(100vh - 60px);
+  /* Safari対応: ピンチズーム時のちらつき防止 */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* 2列 */
+  grid-template-rows: auto auto auto; /* 3行 */
+  gap: 5px; /* 要素間の余白 */
+}
+.grid p {
+  border: 0px solid #333;
+  padding: 5px;
+  text-align: left;
+  margin: 0;
+}
