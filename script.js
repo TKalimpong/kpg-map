@@ -13,9 +13,9 @@ const CONFIG = {
   // ラベル表示の設定
   labelSettings: {
     minZoomForLabels: 13,    // ラベル表示の最小ズームレベル
-    maxLabelsLowZoom: 20,    // 低ズーム時の最大ラベル数
+    maxLabelsLowZoom: 50,    // 低ズーム時の最大ラベル数
     maxLabelsHighZoom: 100,  // 高ズーム時の最大ラベル数
-    updateThrottleMs: 400    // Safari対応: 更新頻度を少し緩く（250→400ms）
+    updateThrottleMs: 300    // Safari対応: 更新頻度を少し緩く（250→400ms）
   }
 };
 
@@ -332,8 +332,6 @@ function updatePolygonLabels(map) {
       }
     }
   }
-  
-  // console.log(`Labels: ${polygonLabels.size} displayed, ${createdCount} created, ${updatedCount} updated, zoom: ${zoom}`);
 }
 
 // 個別のポリゴンラベルを作成
